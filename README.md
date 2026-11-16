@@ -61,3 +61,23 @@ ec2-vpc-policy-gate/
 │   └── sarif_to_securityhub.py             # Converts Checkov SARIF to ASFF JSON & imports to Security Hub / SNS
 ├── architecture.png                        # Exported AWS reference architecture diagram
 └── README.md
+
+---
+
+## Troubleshooting
+
+1. **KMS Key Policy Flagged by Generic IAM Rules (`CKV_AWS_356`, `CKV_AWS_111`, `CKV_AWS_109`):** Split `kms.tf` into three least-privilege statements separated by key administration vs. cryptographic usage, adding `aws:PrincipalAccount`, `kms:ViaService`, `kms:CallerAccount`, and `kms:EncryptionContext` conditions.
+2. **CodeBuild Project Missing Audit Logging (`CKV_AWS_314`):** Provisioned a 365-day KMS-encrypted CloudWatch Log Group (`/aws/codebuild/checkov-drift-scanner-junlab`) in `observability.tf` and attached it to `logs_config`.
+3. **AWS CLI Empty Output Without `--endpoint-url`:** Explicitly passed `--endpoint-url=http://localhost:4566` on AWS CLI commands so older AWS CLI v2 builds route to Floci.
+4. **Checkov SARIF Filename (`results_sarif.sarif`):** Updated `scripts/sarif_to_securityhub.py` to default to `results_sarif.sarif`.
+5. **Ubuntu PEP 668 Python Isolation (`ModuleNotFoundError: boto3`):** Executed scripts explicitly using `/opt/secops-venv/bin/python`.
+6. **Floci Security Hub Ingestion API Parity (`UnknownOperationException: POST /findings/import`):** Persisted normalized ASFF findings to `asff_findings.json` and added an automatic SNS alerting fallback (`ec2-vpc-drift-alerts-junlab`).
+
+---
+
+## Lessons Learned
+
+* **Plan-Level Scanning (`tfplan.json`) Eliminates Static IaC Blind Spots:** Compiling `tfplan.binary` into `tfplan.json` resolves input variables, dynamic blocks, and `for_each` expansions before Checkov runs (`CSA CCC-04`)[cite: 2].
+* **Shift-Left and Shift-Right Controls Must Work Together:** GitHub Actions PR gates block bad IaC before merge, while EventBridge + CodeBuild drift scanning catches out-of-band console/CLI mutations (`NIST CM-3`, `SI-4`)[cite: 2].
+* **Strict Policy-as-Code Exposes Subtle Least-Privilege Gaps:** Enforcing zero Checkov failures guarantees default VPC security groups are locked down (`CKV2_AWS_12`), CloudWatch logs retain for 365 days (`CKV_AWS_338`), and KMS key policies use `kms:ViaService` conditions (`CKV_AWS_356`).
+* **Design Automation Scripts with Graceful Emulator Fallbacks:** Exporting `asff_findings.json` locally and falling back to KMS-encrypted SNS alerting keeps the pipeline portable between local Floci labs and production AWS[cite: 2].
