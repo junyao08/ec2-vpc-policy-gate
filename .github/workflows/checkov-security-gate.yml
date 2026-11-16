@@ -1,0 +1,62 @@
+name: Checkov EC2 & VPC Policy-as-Code Gate
+
+on:
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'envs/**'
+      - 'custom-policies/**'
+  push:
+    branches: [ main ]
+
+permissions:
+  id-token: write
+  contents: read
+  security-events: write
+  pull-requests: write
+
+jobs:
+  checkov-plan-gate:
+    name: Plan-Level Static Compliance & Custom Policy Gate
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Infrastructure Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.10.0
+
+      - name: Setup Python & Checkov
+        run: |
+          python3 -m pip install --upgrade pip checkov
+
+      - name: Compile Terraform Plan JSON (Hardened Stack)
+        working-directory: envs/hardened-zero-trust
+        run: |
+          rm -f override.tf
+          terraform init -backend=false
+          terraform validate
+          terraform plan -out=tfplan.binary -refresh=false
+          terraform show -json tfplan.binary > tfplan.json
+
+      - name: Run Checkov Against Compiled Plan & Custom Policies
+        id: checkov
+        run: |
+          checkov \
+            -f envs/hardened-zero-trust/tfplan.json \
+            --framework terraform_plan \
+            --external-checks-dir custom-policies \
+            -o cli \
+            -o sarif \
+            --output-file-path console,results.sarif \
+            --soft-fail-on LOW
+
+      - name: Upload SARIF Findings to GitHub Security Tab
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: results.sarif
+          category: checkov-ec2-vpc-policy-gate

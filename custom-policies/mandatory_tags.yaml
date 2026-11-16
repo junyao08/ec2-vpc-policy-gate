@@ -1,0 +1,24 @@
+metadata:
+  id: "CKV2_CUSTOM_1"
+  name: "Ensure EC2 instances and VPCs include mandatory Owner, Environment, and DataClassification tags"
+  category: "GENERAL_SECURITY"
+definition:
+  and:
+    - cond_type: "attribute"
+      resource_types:
+        - "aws_instance"
+        - "aws_vpc"
+      attribute: "tags.Owner"
+      operator: "exists"
+    - cond_type: "attribute"
+      resource_types:
+        - "aws_instance"
+        - "aws_vpc"
+      attribute: "tags.Environment"
+      operator: "exists"
+    - cond_type: "attribute"
+      resource_types:
+        - "aws_instance"
+        - "aws_vpc"
+      attribute: "tags.DataClassification"
+      operator: "exists"

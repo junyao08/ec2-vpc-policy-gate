@@ -1,0 +1,21 @@
+# Terraform state & local provider overrides
+**/.terraform/
+*.tfstate
+*.tfstate.*
+override.tf
+.terraform.lock.hcl
+
+# Compiled Terraform execution plans & scan artifacts
+**/tfplan.binary
+**/tfplan.json
+*.sarif
+asff_findings.json
+
+# Diagram source file (keep exported architecture.png visible in repo)
+architecture.drawio
+
+# Python virtual environments & cache
+__pycache__/
+*.py[cod]
+.venv/
+venv/

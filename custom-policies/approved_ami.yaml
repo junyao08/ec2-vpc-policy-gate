@@ -1,0 +1,12 @@
+metadata:
+  id: "CKV2_CUSTOM_2"
+  name: "Ensure EC2 instances launch only from approved CIS-hardened Golden AMIs"
+  category: "SUPPLY_CHAIN"
+definition:
+  cond_type: "attribute"
+  resource_types:
+    - "aws_instance"
+  attribute: "ami"
+  operator: "within"
+  value:
+    - "ami-0c55b159cbfafe1f0"

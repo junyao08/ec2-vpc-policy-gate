@@ -1,0 +1,14 @@
+metadata:
+  id: "CKV2_CUSTOM_3"
+  name: "Ensure EC2 instances use approved compute instance types to prevent crypto-mining abuse"
+  category: "GENERAL_SECURITY"
+definition:
+  cond_type: "attribute"
+  resource_types:
+    - "aws_instance"
+  attribute: "instance_type"
+  operator: "within"
+  value:
+    - "t3.micro"
+    - "t3.small"
+    - "t3.medium"
